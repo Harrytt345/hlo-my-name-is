@@ -1,12 +1,9 @@
 # Use a Python 3.12.3 Alpine base image
 FROM python:3.12-alpine3.20
-
 # Set the working directory
 WORKDIR /app
-
 # Copy all files from the current directory to the container's /app directory
 COPY . .
-
 # Install necessary dependencies
 RUN apk add --no-cache \
     gcc \
@@ -27,11 +24,12 @@ RUN apk add --no-cache \
     cp mp4decrypt /usr/local/bin/ &&\
     cd ../.. && \
     rm -rf Bento4-1.6.0-639 v1.6.0-639.zip
-
 # Install Python dependencies
 RUN pip3 install --no-cache-dir --upgrade pip \
     && pip3 install --no-cache-dir --upgrade -r sainibots.txt \
-    && python3 -m pip install -U yt-dlp
-
+    && python3 -m pip install -U yt-dlp \
+    && pip3 install aiohttp  # Add this for the web server
+# Expose the port that Render.com expects
+EXPOSE 10000
 # Set the command to run the application
 CMD ["python3", "main.py"]
