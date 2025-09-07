@@ -27,8 +27,7 @@ RUN apk add --no-cache \
 # Install Python dependencies
 RUN pip3 install --no-cache-dir --upgrade pip \
     && pip3 install --no-cache-dir --upgrade -r sainibots.txt \
-    && python3 -m pip install -U yt-dlp \
-    && pip3 install aiohttp  # Add this for the web server
+    && python3 -m pip install -U yt-dlp
 # Expose the port that Render.com expects
 EXPOSE 10000
 # Set the command to run the application
