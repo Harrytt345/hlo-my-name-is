@@ -30,7 +30,7 @@ from modules.youtube_handler import ytm_handler, y2t_handler, getcookies_handler
 from modules.utils import progress_bar
 from vars import api_url, api_token, token_cp, adda_token, photologo, photoyt, photocp, photozip
 from vars import API_ID, API_HASH, BOT_TOKEN, OWNER, CREDIT, AUTH_USERS, TOTAL_USERS, cookies_file_path
-from aiohttp import ClientSession
+from aiohttp import ClientSession, web
 from subprocess import getstatusoutput
 from pytube import YouTube
 from aiohttp import web
@@ -59,6 +59,20 @@ bot = Client(
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
 )
+
+# Web server for Render health checks
+async def health_check(request):
+    return web.Response(text="Bot is running")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get('/', health_check)
+    port = int(os.environ.get('PORT', 10000))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"Web server started on port {port}")
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
@@ -276,6 +290,7 @@ async def upgrade_button(client, callback_query):
     ),
     reply_markup=keyboard
     )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("setttings"))
@@ -298,6 +313,7 @@ async def settings_button(client, callback_query):
     ),
     reply_markup=keyboard
     )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("thummbnail_command"))
 async def cmd(client, callback_query):
@@ -315,6 +331,7 @@ async def cmd(client, callback_query):
     ),
     reply_markup=keyboard
     )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("wattermark_command"))
 async def cmd(client, callback_query):
@@ -332,6 +349,7 @@ async def cmd(client, callback_query):
     ),
     reply_markup=keyboard
     )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("set_token_command"))
 async def cmd(client, callback_query):
@@ -350,6 +368,7 @@ async def cmd(client, callback_query):
     ),
     reply_markup=keyboard
     )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("caption_style_command"))
 async def handle_caption(client, callback_query):
@@ -387,6 +406,7 @@ async def handle_caption(client, callback_query):
         await editable.edit(f"<b>❌ Failed to set Caption Style:</b>\n<blockquote expandable>{str(e)}</blockquote>", reply_markup=keyboard)
     finally:
         await input_msg.delete()
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("file_name_command"))
 async def handle_caption(client, callback_query):
@@ -406,6 +426,7 @@ async def handle_caption(client, callback_query):
         await editable.edit(f"<b>❌ Failed to set End File Name:</b>\n<blockquote expandable>{str(e)}</blockquote>", reply_markup=keyboard)
     finally:
         await input_msg.delete()
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("viideo_thumbnail_command"))
 async def video_thumbnail(client, callback_query):
@@ -431,6 +452,7 @@ async def video_thumbnail(client, callback_query):
         await editable.edit(f"<b>❌ Failed to set thumbnail:</b>\n<blockquote expandable>{str(e)}</blockquote>", reply_markup=keyboard)
     finally:
         await input_msg.delete()
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("pddf_thumbnail_command"))
 async def pdf_thumbnail_button(client, callback_query):
@@ -443,6 +465,7 @@ async def pdf_thumbnail_button(client, callback_query):
     ),
     reply_markup=keyboard
   )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("add_credit_command"))
 async def credit(client, callback_query):
@@ -464,6 +487,7 @@ async def credit(client, callback_query):
         await editable.edit(f"<b>❌ Failed to set Credit:</b>\n<blockquote expandable>{str(e)}</blockquote>", reply_markup=keyboard)
     finally:
         await input_msg.delete()
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("cp_token_command"))
 async def handle_token(client, callback_query):
@@ -479,6 +503,7 @@ async def handle_token(client, callback_query):
         await editable.edit(f"<b>❌ Failed to set Classplus Token:</b>\n<blockquote expandable>{str(e)}</blockquote>", reply_markup=keyboard)
     finally:
         await input_msg.delete()
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("pw_token_command"))
 async def handle_token(client, callback_query):
@@ -494,6 +519,7 @@ async def handle_token(client, callback_query):
         await editable.edit(f"<b>❌ Failed to set Physics Wallah Token:</b>\n<blockquote expandable>{str(e)}</blockquote>", reply_markup=keyboard)
     finally:
         await input_msg.delete()
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("cw_token_command"))
 async def handle_token(client, callback_query):
@@ -503,7 +529,7 @@ async def handle_token(client, callback_query):
     input_msg = await bot.listen(editable.chat.id)
     try:
         if input_msg.text.lower() == "/d":
-            globals.cwtoken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3MjQyMzg3OTEsImNvbiI6eyJpc0FkbWluIjpmYWxzZSwiYXVzZXIiOiJVMFZ6TkdGU2NuQlZjR3h5TkZwV09FYzBURGxOZHowOSIsImlkIjoiZEUxbmNuZFBNblJqVEROVmFWTlFWbXhRTkhoS2R6MDkiLCJmaXJzdF9uYW1lIjoiYVcxV05ITjVSemR6Vm10ak1WUlBSRkF5ZVNzM1VUMDkiLCJlbWFpbCI6Ik5Ga3hNVWhxUXpRNFJ6VlhiR0ppWTJoUk0wMVdNR0pVTlU5clJXSkRWbXRMTTBSU2FHRnhURTFTUlQwPSIsInBob25lIjoiVUhVMFZrOWFTbmQ1ZVcwd1pqUTViRzVSYVc5aGR6MDkiLCJhdmF0YXIiOiJLM1ZzY1M4elMwcDBRbmxrYms4M1JEbHZla05pVVQwOSIsInJlZmVycmFsX2NvZGUiOiJOalZFYzBkM1IyNTBSM3B3VUZWbVRtbHFRVXAwVVQwOSIsImRldmljZV90eXBlIjoiYW5kcm9pZCIsImRldmljZV92ZXJzaW9uIjoiUShBbmRyb2lkIDEwLjApIiwiZGV2aWNlX21vZGVsIjoiU2Ftc3VuZyBTTS1TOTE4QiIsInJlbW90ZV9hZGRyIjoiNTQuMjI2LjI1NS4xNjMsIDU0LjIyNi4yNTUuMTYzIn19.snDdd-PbaoC42OUhn5SJaEGxq0VzfdzO49WTmYgTx8ra_Lz66GySZykpd2SxIZCnrKR6-R10F5sUSrKATv1CDk9ruj_ltCjEkcRq8mAqAytDcEBp72-W0Z7DtGi8LdnY7Vd9Kpaf499P-y3-godolS_7ixClcYOnWxe2nSVD5C9c5HkyisrHTvf6NFAuQC_FD3TzByldbPVKK0ag1UnHRavX8MtttjshnRhv5gJs5DQWj4Ir_dkMcJ4JaVZO3z8j0OxVLjnmuaRBujT-1pavsr1CCzjTbAcBvdjUfvzEhObWfA1-Vl5Y4bUgRHhl1U-0hne4-5fF0aouyu71Y6W0eg'
+            globals.cwtoken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3MjQyMzg3OTEsImNvbiI6eyJpc0FkbWluIjpmYWxzZSwiYXVzZXIiOiJVMFZ6TkdGU2NuQlZjR3h5TkZwV09FYzBURGxOZHowOSIsImlkIjoiZEUxbmNuZFBNblJqVEROVmFWTlFWbXhRTkhoS2R6MDkiLCJmaXJzdF9uYW1lIjoiYVcxV05ITjVSemR6Vm10ak1WUlBSRkF5ZVNzM1VUMDkiLCJlbWFpbCI6Ik5Ga3hNVWhxUXpRNFJ6VlhiR0ppWTJoUk0wMVdNR0pVTlU5clJXSkRWbXRMTTBSU2FHRnhURTFTUlQwPSIsInBob25lIjoiVUhVMFZrOWFTbmQ1ZVcwd1pqUTViRzVSYVc5aGR6MDkiLCJhdmF0YXIiOiJLM1ZzY1M4elMwcDBRbmxrYms4M1JEbHZla05pVVQwOSIsInJlZmVycmFsX2NvZGUiOiJOalZFYzBkM1IyNTBSM3B3VUZWbVRtbHFRVXAwVVQwOSIsImRldmljZV90eXBlIjoiYW5kcm9pZCIsImRldmljZV92ZXJzaW9uIjoiUChBbmRyb2lkIDEwLjApIiwiZGV2aWNlX21vZGVsIjoiU2Ftc3VuZyBTTS1TOTE4QiIsInJlbW90ZV9hZGRyIjoiNTQuMjI2LjI1NS4xNjMsIDU0LjIyNi4yNTUuMTYzIn19.snDdd-PbaoC42OUhn5SJaEGxq0VzfdzO49WTmYgTx8ra_Lz66GySZykpd2SxIZCnrKR6-R10F5sUSrKATv1CDk9ruj_ltCjEkcRq8mAqAytDcEBp72-W0Z7DtGi8LdnY7Vd9Kpaf499P-y3-godolS_7ixClcYOnWxe2nSVD5C9c5HkyisrHTvf6NFAuQC_FD3TzByldbPVKK0ag1UnHRavX8MtttjshnRhv5gJs5DQWj4Ir_dkMcJ4JaVZO3z8j0OxVLjnmuaRBujT-1pavsr1CCzjTbAcBvdjUfvzEhObWfA1-Vl5Y4bUgRHhl1U-0hne4-5fF0aouyu71Y6W0eg'
             await editable.edit(f"✅ Carrerwill Token set successfully as default !", reply_markup=keyboard)
 
         else:
@@ -514,6 +540,7 @@ async def handle_token(client, callback_query):
         await editable.edit(f"<b>❌ Failed to set Careerwill Token:</b>\n<blockquote expandable>{str(e)}</blockquote>", reply_markup=keyboard)
     finally:
         await input_msg.delete()
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("video_watermark_command"))
 async def video_watermark(client, callback_query):
@@ -535,6 +562,7 @@ async def video_watermark(client, callback_query):
         await editable.edit(f"<b>❌ Failed to set Watermark:</b>\n<blockquote expandable>{str(e)}</blockquote>", reply_markup=keyboard)
     finally:
         await input_msg.delete()
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("pdf_watermark_command"))
 async def pdf_watermark_button(client, callback_query):
@@ -547,6 +575,7 @@ async def pdf_watermark_button(client, callback_query):
     ),
     reply_markup=keyboard
   )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("quality_command"))
 async def handle_quality(client, callback_query):
@@ -595,6 +624,7 @@ async def handle_quality(client, callback_query):
         await editable.edit(f"<b>❌ Failed to set Video Quality:</b>\n<blockquote expandable>{str(e)}</blockquote>", reply_markup=keyboard)
     finally:
         await input_msg.delete()
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("topic_command"))
 async def video_watermark(client, callback_query):
@@ -616,6 +646,7 @@ async def video_watermark(client, callback_query):
         await editable.edit(f"<b>❌ Failed to set Topic in Caption:</b>\n<blockquote expandable>{str(e)}</blockquote>", reply_markup=keyboard)
     finally:
         await input_msg.delete()
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("resset_command"))
 async def credit(client, callback_query):
@@ -670,6 +701,7 @@ async def feature_button(client, callback_query):
     ),
     reply_markup=keyboard
   )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("pin_command"))
 async def pin_button(client, callback_query):
@@ -682,6 +714,7 @@ async def pin_button(client, callback_query):
       ),
       reply_markup=keyboard
   )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("watermark_command"))
 async def watermark_button(client, callback_query):
@@ -694,6 +727,7 @@ async def watermark_button(client, callback_query):
       ),
       reply_markup=keyboard
   )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("reset_command"))
 async def restart_button(client, callback_query):
@@ -706,6 +740,7 @@ async def restart_button(client, callback_query):
       ),
       reply_markup=keyboard
   )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("logs_command"))
 async def pin_button(client, callback_query):
@@ -718,6 +753,7 @@ async def pin_button(client, callback_query):
       ),
       reply_markup=keyboard
     )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("custom_command"))
 async def custom_button(client, callback_query):
@@ -730,6 +766,7 @@ async def custom_button(client, callback_query):
       ),
       reply_markup=keyboard
   )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("titlle_command"))
 async def titlle_button(client, callback_query):
@@ -742,6 +779,7 @@ async def titlle_button(client, callback_query):
       ),
       reply_markup=keyboard
   )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("broadcast_command"))
 async def pin_button(client, callback_query):
@@ -754,6 +792,7 @@ async def pin_button(client, callback_query):
       ),
       reply_markup=keyboard
   )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("txt_maker_command"))
 async def editor_button(client, callback_query):
@@ -766,6 +805,7 @@ async def editor_button(client, callback_query):
       ),
       reply_markup=keyboard
   )
+
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("yt_command"))
 async def y2t_button(client, callback_query):
@@ -905,6 +945,17 @@ async def call_cookies_handler(client: Client, message: Message):
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 # Main execution
+async def main():
+    # Start the web server
+    await start_web_server()
+    
+    # Start the bot
+    await bot.start()
+    print("Bot started successfully!")
+    
+    # Keep the bot running
+    await asyncio.Event().wait()
+
 if __name__ == "__main__":
     print("Bot is starting...")
-    bot.run()
+    asyncio.run(main())
