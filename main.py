@@ -197,7 +197,7 @@ async def start_web_server():
     app = web.Application()
     app.router.add_get('/', health_check)
     app.router.add_get('/status', status_check)
-    port = int(os.environ.get('PORT', 10000))
+    port = int(os.environ.get('PORT', 8000))
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', port)
@@ -361,7 +361,7 @@ async def help_button(client, callback_query):
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("owner_command"))
-async def help_button(client, callback_query):
+async def owner_help_button(client, callback_query):
     user_id = callback_query.from_user.id
     first_name = callback_query.from_user.first_name
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Commands", callback_data="cmd_command")]])
@@ -472,7 +472,7 @@ async def handle_caption(client, callback_query):
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("quality_command"))
-async def handle_caption(client, callback_query):
+async def handle_quality(client, callback_query):
     user_id = callback_query.from_user.id
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Settings", callback_data="setttings")]])
     editable = await callback_query.message.edit("**Send Quality**\n144 | 240 | 360 | 480 | 720 | 1080", reply_markup=keyboard)
@@ -589,7 +589,7 @@ async def handle_caption(client, callback_query):
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("file_name_command"))
-async def handle_caption(client, callback_query):
+async def handle_filename(client, callback_query):
     user_id = callback_query.from_user.id
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Settings", callback_data="setttings")]])
     editable = await callback_query.message.edit("**Send End File Name or Send /d**", reply_markup=keyboard)
@@ -667,7 +667,7 @@ async def handle_token(client, callback_query):
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("pw_token_command"))
-async def handle_token(client, callback_query):
+async def handle_pw_token(client, callback_query):
     user_id = callback_query.from_user.id
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Settings", callback_data="set_token_command")]])
     editable = await callback_query.message.edit("**Send Physics Wallah Same Batch Token**", reply_markup=keyboard)
@@ -682,7 +682,7 @@ async def handle_token(client, callback_query):
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_callback_query(filters.regex("cw_token_command"))
-async def handle_token(client, callback_query):
+async def handle_cw_token(client, callback_query):
     user_id = callback_query.from_user.id
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Settings", callback_data="set_token_command")]])
     editable = await callback_query.message.edit("**Send Carrerwill Token**", reply_markup=keyboard)
@@ -1111,11 +1111,11 @@ async def main():
     cleanup_before_download()
     check_disk_space()
     
-    # Start web server
-    print("Starting web server...")
-    web_runner = await start_web_server()
-    
     try:
+        # Start web server in background
+        print("Starting web server...")
+        web_runner = await start_web_server()
+        
         # Start the bot
         print("Starting Telegram bot...")
         await bot.start()
@@ -1131,8 +1131,7 @@ async def main():
         bot_status["error"] = None
         
         print("🚀 Bot is now listening for messages...")
-        print("Available at: https://hlo-my-name-is.onrender.com")
-        print("Status endpoint: https://hlo-my-name-is.onrender.com/status")
+        print("Status endpoint available for health checks")
         
         # Use pyrogram's idle() to keep bot running and listening
         await idle()
@@ -1144,6 +1143,7 @@ async def main():
         
     except (Unauthorized, AuthKeyUnregistered) as e:
         print(f"Authentication error: {e}")
+        print("Please check your BOT_TOKEN, API_ID, and API_HASH")
         bot_status["error"] = f"Authentication: {str(e)}"
         
     except Exception as e:
@@ -1154,7 +1154,10 @@ async def main():
         
     finally:
         print("Shutting down...")
-        await web_runner.cleanup()
+        try:
+            await web_runner.cleanup()
+        except:
+            pass
         try:
             await bot.stop()
         except:
