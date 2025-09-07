@@ -48,9 +48,9 @@ import zipfile
 import shutil
 import ffmpeg
 
-# Initialize the bot
+# Initialize the bot with memory-based session (Render compatible)
 bot = Client(
-    "bot",
+    ":memory:",  # Use memory session instead of file - fixes Render deployment
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
