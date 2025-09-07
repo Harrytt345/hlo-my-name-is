@@ -38,7 +38,7 @@ import random
 from pyromod import listen
 from pyrogram import Client, filters
 from pyrogram.types import Message, InputMediaPhoto
-from pyrogram.errors import FloodWait, PeerIdInvalid, UserIsBlocked, InputUserDeactivated
+from pyrogram.errors import FloodWait, PeerIdInvalid, UserIsBlocked, InputUserDeactivated, Unauthorized, AuthKeyUnregistered
 from pyrogram.errors.exceptions.bad_request_400 import StickerEmojiInvalid
 from pyrogram.types.messages_and_media import message
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -47,14 +47,40 @@ import aiofiles
 import zipfile
 import shutil
 import ffmpeg
+import glob
 
-# Create sessions directory if it doesn't exist (Fix for Render.com deployment)
-if not os.path.exists("./sessions"):
-    os.makedirs("./sessions", exist_ok=True)
+# Enhanced session cleanup function
+def clean_session_files():
+    """Remove all existing session files to ensure clean start"""
+    print("Starting session cleanup...")
+    
+    # Delete all session files in the sessions directory
+    session_files = glob.glob("./sessions/*.session*")  # This catches .session, .session-journal, etc.
+    deleted_count = 0
+    
+    for file in session_files:
+        try:
+            os.remove(file)
+            print(f"Deleted old session file: {file}")
+            deleted_count += 1
+        except Exception as e:
+            print(f"Error deleting session file {file}: {e}")
+    
+    # Create sessions directory if it doesn't exist
+    if not os.path.exists("./sessions"):
+        os.makedirs("./sessions", exist_ok=True)
+        print("Created sessions directory")
+    
+    print(f"Session cleanup completed. Deleted {deleted_count} files.")
+    return deleted_count
 
-# Initialize the bot
+# Execute session cleanup
+clean_session_files()
+
+# Initialize the bot with a unique session name each time
+SESSION_NAME = f"./sessions/bot_{int(time.time())}"
 bot = Client(
-    "./sessions/bot",
+    SESSION_NAME,
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
@@ -460,8 +486,8 @@ async def pdf_thumbnail_button(client, callback_query):
   caption = ("<b>⋅ This Feature is Not Working Yet ⋅</b>")
   await callback_query.message.edit_media(
     InputMediaPhoto(
-        media="https://envs.sh/GVI.jpg",
-        caption=caption
+      media="https://envs.sh/GVI.jpg",
+      caption=caption
     ),
     reply_markup=keyboard
   )
@@ -661,7 +687,7 @@ async def credit(client, callback_query):
             globals.endfilename = '/d'
             globals.thumb = '/d'
             globals.CR = f"{CREDIT}"
-            globals.cwtoken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3MjQyMzg3OTEsImNvbiI6eyJpc0FkbWluIjpmYWxzZSwiYXVzZXIiOiJVMFZ6TkdGU2NuQlZjR3h5TkZwV09FYzBURGxOZHowOSIsImlkIjoiZEUxbmNuZFBNblJqVEROVmFWTlFWbXhRTkhoS2R6MDkiLCJmaXJzdF9uYW1lIjoiYVcxV05ITjVSemR6Vm10ak1WUlBSRkF5ZVNzM1VUMDkiLCJlbWFpbCI6Ik5Ga3hNVWhxUXpRNFJ6VlhiR0ppWTJoUk0wMVdNR0pVTlU5clJXSkRWbXRMTTBSU2FHRnhURTFTUlQwPSIsInBob25lIjoiVUhVMFZrOWFTbmQ1ZVcwd1pqUTViRzVSYVc5aGR6MDkiLCJhdmF0YXIiOiJLM1ZzY1M4elMwcDBRbmxrYms4M1JEbHZla05pVVQwOSIsInJlZmVycmFsX2NvZGUiOiJOalZFYzBkM1IyNTBSM3B3VUZWbVRtbHFRVXAwVVQwOSIsImRldmljZV90eXBlIjoiYW5kcm9pZCIsImRldmljZV92ZXJzaW9uIjoiUShBbmRyb2lkIDEwLjApIiwiZGV2aWNlX21vZGVsIjoiU2Ftc3VuZyBTTS1TOTE4QiIsInJlbW90ZV9hZGRyIjoiNTQuMjI2LjI1NS4xNjMsIDU0LjIyNi4yNTUuMTYzIn19.snDdd-PbaoC42OUhn5SJaEGxq0VzfdzO49WTmYgTx8ra_Lz66GySZykpd2SxIZCnrKR6-R10F5sUSrKATv1CDk9ruj_ltCjEkcRq8mAqAytDcEBp72-W0Z7DtGi8LdnY7Vd9Kpaf499P-y3-godolS_7ixClcYOnWxe2nSVD5C9c5HkyisrHTvf6NFAuQC_FD3TzByldbPVKK0ag1UnHRavX8MtttjshnRhv5gJs5DQWj4Ir_dkMcJ4JaVZO3z8j0OxVLjnmuaRBujT-1pavsr1CCzjTbAcBvdjUfvzEhObWfA1-Vl5Y4bUgRHhl1U-0hne4-5fF0aouyu71Y6W0eg'
+            globals.cwtoken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3MjQyMzg3OTEsImNvbiI6eyJpc0FkbWluIjpmYWxzZSwiYXVzZXIiOiJVMFZ6TkdGU2NuQlZjR3h5TkZwV09FYzBURGxOZHowOSIsImlkIjoiZEUxbmNuZFBNblJqVEROVmFWTlFWbXhRTkhoS2R6MDkiLCJmaXJzdF9uYW1lIjoiYVcxV05ITjVSemR6Vm10ak1WUlBSRkF5ZVNzM1VUMDkiLCJlbWFpbCI6Ik5Ga3hNVWhxUXpRNFJ6VlhiR0ppWTJoUk0wMVdNR0pVTlU5clJXSkRWbXRMTTBSU2FHRnhURTFTUlQwPSIsInBob25lIjoiVUhVMFZrOWFTbmQ1ZVcwd1pqUTViRzVSYVc5aGR6MDkiLCJhdmF0YXIiOiJLM1ZzY1M4elMwcDBRbmxrYms4M1JEbHZla05pVVQwOSIsInJlZmVycmFsX2NvZGUiOiJOalZFYzBkM1IyNTBSM3B3VUZWbVRtbHFRVXAwVVQwOSIsImRldmljZV90eXBlIjoiYW5kcm9pZCIsImRldmljZV92ZXJzaW9uIjoiUChBbmRyb2lkIDEwLjApIiwiZGV2aWNlX21vZGVsIjoiU2Ftc3VuZyBTTS1TOTE4QiIsInJlbW90ZV9hZGRyIjoiNTQuMjI2LjI1NS4xNjMsIDU0LjIyNi4yNTUuMTYzIn19.snDdd-PbaoC42OUhn5SJaEGxq0VzfdzO49WTmYgTx8ra_Lz66GySZykpd2SxIZCnrKR6-R10F5sUSrKATv1CDk9ruj_ltCjEkcRq8mAqAytDcEBp72-W0Z7DtGi8LdnY7Vd9Kpaf499P-y3-godolS_7ixClcYOnWxe2nSVD5C9c5HkyisrHTvf6NFAuQC_FD3TzByldbPVKK0ag1UnHRavX8MtttjshnRhv5gJs5DQWj4Ir_dkMcJ4JaVZO3z8j0OxVLjnmuaRBujT-1pavsr1CCzjTbAcBvdjUfvzEhObWfA1-Vl5Y4bUgRHhl1U-0hne4-5fF0aouyu71Y6W0eg'
             globals.cptoken = "cptoken"
             globals.pwtoken = "pwtoken"
             globals.vidwatermark = '/d'
@@ -944,17 +970,49 @@ async def call_cookies_handler(client: Client, message: Message):
     await cookies_handler(client, message)
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
-# Main execution
+# Main execution with enhanced error handling
 async def main():
     # Start the web server
     await start_web_server()
     
-    # Start the bot
-    await bot.start()
-    print("Bot started successfully!")
+    # Start the bot with enhanced error handling
+    retry_count = 0
+    max_retries = 5
+    
+    while retry_count < max_retries:
+        try:
+            print(f"Attempting to start bot (attempt {retry_count + 1}/{max_retries})...")
+            await bot.start()
+            print("Bot started successfully!")
+            break
+        except FloodWait as e:
+            wait_time = e.value
+            print(f"FloodWait error: Waiting {wait_time} seconds before retry...")
+            await asyncio.sleep(wait_time)
+            retry_count += 1
+        except (Unauthorized, AuthKeyUnregistered) as e:
+            print(f"Authentication error: {e}")
+            print("Cleaning session files and retrying...")
+            clean_session_files()
+            retry_count += 1
+            await asyncio.sleep(5)
+        except Exception as e:
+            print(f"Error starting bot: {e}")
+            retry_count += 1
+            await asyncio.sleep(30)  # Wait 30 seconds before retrying
+    
+    if retry_count >= max_retries:
+        print("Failed to start bot after maximum retries")
+        return
     
     # Keep the bot running
-    await asyncio.Event().wait()
+    print("Bot is now running. Press Ctrl+C to stop.")
+    try:
+        await asyncio.Event().wait()
+    except KeyboardInterrupt:
+        print("Received keyboard interrupt, stopping bot...")
+        await bot.stop()
+        print("Bot stopped.")
 
 if __name__ == "__main__":
     print("Bot is starting...")
