@@ -49,6 +49,14 @@ import shutil
 import ffmpeg
 import glob
 
+# Global variable to track bot status
+bot_status = {
+    "running": False,
+    "error": None,
+    "session_name": None,
+    "start_time": None
+}
+
 # Enhanced session cleanup function
 def clean_session_files():
     """Remove all existing session files to ensure clean start"""
@@ -79,6 +87,9 @@ clean_session_files()
 
 # Initialize the bot with a unique session name each time
 SESSION_NAME = f"./sessions/bot_{int(time.time())}"
+bot_status["session_name"] = SESSION_NAME
+print(f"Using session file: {SESSION_NAME}")
+
 bot = Client(
     SESSION_NAME,
     api_id=API_ID,
@@ -90,15 +101,37 @@ bot = Client(
 async def health_check(request):
     return web.Response(text="Bot is running")
 
+async def status_check(request):
+    """Debug endpoint to check bot status"""
+    status_info = {
+        "bot_running": bot_status["running"],
+        "error": str(bot_status["error"]) if bot_status["error"] else None,
+        "session_name": bot_status["session_name"],
+        "start_time": bot_status["start_time"],
+        "env_vars": {
+            "API_ID": os.environ.get('API_ID', 'Not set'),
+            "BOT_TOKEN_SET": bool(os.environ.get('BOT_TOKEN')),
+            "OWNER_SET": bool(os.environ.get('OWNER')),
+            "CREDIT_SET": bool(os.environ.get('CREDIT')),
+            "PORT": os.environ.get('PORT', 'Not set')
+        },
+        "session_files": glob.glob("./sessions/*.session*"),
+        "working_directory": os.getcwd()
+    }
+    
+    return web.json_response(status_info)
+
 async def start_web_server():
     app = web.Application()
     app.router.add_get('/', health_check)
+    app.router.add_get('/status', status_check)
     port = int(os.environ.get('PORT', 10000))
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
     print(f"Web server started on port {port}")
+    print(f"Status endpoint available at: http://0.0.0.0:{port}/status")
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
@@ -854,8 +887,8 @@ async def y2t_button(client, callback_query):
     InputMediaPhoto(
       media="https://envs.sh/GVI.jpg",
       caption=caption
-      ),
-      reply_markup=keyboard
+    ),
+    reply_markup=keyboard
   )
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
@@ -970,9 +1003,12 @@ async def call_cookies_handler(client: Client, message: Message):
     await cookies_handler(client, message)
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
-# Main execution with enhanced error handling
+# Main execution with enhanced error handling and logging
 async def main():
+    print("Starting main execution...")
+    
     # Start the web server
+    print("Starting web server...")
     await start_web_server()
     
     # Start the bot with enhanced error handling
@@ -982,27 +1018,40 @@ async def main():
     while retry_count < max_retries:
         try:
             print(f"Attempting to start bot (attempt {retry_count + 1}/{max_retries})...")
+            print(f"Using session: {SESSION_NAME}")
+            print(f"API_ID: {API_ID}")
+            print(f"BOT_TOKEN: {BOT_TOKEN[:10]}...")  # Only show first 10 chars for security
+            
             await bot.start()
             print("Bot started successfully!")
+            bot_status["running"] = True
+            bot_status["start_time"] = time.time()
             break
         except FloodWait as e:
             wait_time = e.value
             print(f"FloodWait error: Waiting {wait_time} seconds before retry...")
+            bot_status["error"] = f"FloodWait: {wait_time}s"
             await asyncio.sleep(wait_time)
             retry_count += 1
         except (Unauthorized, AuthKeyUnregistered) as e:
             print(f"Authentication error: {e}")
+            bot_status["error"] = f"Authentication: {str(e)}"
             print("Cleaning session files and retrying...")
             clean_session_files()
             retry_count += 1
             await asyncio.sleep(5)
         except Exception as e:
             print(f"Error starting bot: {e}")
+            print(f"Error type: {type(e)}")
+            bot_status["error"] = f"General: {str(e)}"
+            import traceback
+            traceback.print_exc()
             retry_count += 1
             await asyncio.sleep(30)  # Wait 30 seconds before retrying
     
     if retry_count >= max_retries:
         print("Failed to start bot after maximum retries")
+        bot_status["error"] = "Failed to start after maximum retries"
         return
     
     # Keep the bot running
@@ -1013,7 +1062,15 @@ async def main():
         print("Received keyboard interrupt, stopping bot...")
         await bot.stop()
         print("Bot stopped.")
+        bot_status["running"] = False
 
 if __name__ == "__main__":
     print("Bot is starting...")
+    print(f"Python version: {sys.version}")
+    print(f"Working directory: {os.getcwd()}")
+    print(f"Environment variables:")
+    print(f"  PORT: {os.environ.get('PORT', 'Not set')}")
+    print(f"  API_ID: {os.environ.get('API_ID', 'Not set')}")
+    print(f"  BOT_TOKEN: {os.environ.get('BOT_TOKEN', 'Not set')[:10] if os.environ.get('BOT_TOKEN') else 'Not set'}...")
+    
     asyncio.run(main())
