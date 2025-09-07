@@ -17,17 +17,17 @@ import cloudscraper
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 from base64 import b64encode, b64decode
-from logs import logging
+from modules.logs import logging
 from bs4 import BeautifulSoup
-import saini as helper
-from html_handler import html_handler
-from drm_handler import drm_handler
-import globals
-from authorisation import add_auth_user, list_auth_users, remove_auth_user
-from broadcast import broadcast_handler, broadusers_handler
-from text_handler import text_to_txt
-from youtube_handler import ytm_handler, y2t_handler, getcookies_handler, cookies_handler
-from utils import progress_bar
+from modules import saini as helper
+from modules.html_handler import html_handler
+from modules.drm_handler import drm_handler
+from modules import globals
+from modules.authorisation import add_auth_user, list_auth_users, remove_auth_user
+from modules.broadcast import broadcast_handler, broadusers_handler
+from modules.text_handler import text_to_txt
+from modules.youtube_handler import ytm_handler, y2t_handler, getcookies_handler, cookies_handler
+from modules.utils import progress_bar
 from vars import api_url, api_token, token_cp, adda_token, photologo, photoyt, photocp, photozip
 from vars import API_ID, API_HASH, BOT_TOKEN, OWNER, CREDIT, AUTH_USERS, TOTAL_USERS, cookies_file_path
 from aiohttp import ClientSession
@@ -48,9 +48,13 @@ import zipfile
 import shutil
 import ffmpeg
 
-# Initialize the bot with memory-based session (Render compatible)
+# Create sessions directory if it doesn't exist (Fix for Render.com deployment)
+if not os.path.exists("./sessions"):
+    os.makedirs("./sessions", exist_ok=True)
+
+# Initialize the bot
 bot = Client(
-    ":memory:",  # Use memory session instead of file - fixes Render deployment
+    "./sessions/bot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN
@@ -107,7 +111,7 @@ async def start(bot, m: Message):
             [InlineKeyboardButton("✨ Commands", callback_data="cmd_command")],
             [InlineKeyboardButton("💎 Features", callback_data="feat_command"), InlineKeyboardButton("⚙️ Settings", callback_data="setttings")],
             [InlineKeyboardButton("💳 Plans", callback_data="upgrade_command")],
-            [InlineKeyboardButton(text="📞 Contact", url=f"tg://openmessage?user_id={OWNER}"), InlineKeyboardButton(text="🛠️ Repo", url="https://github.com/Harrytt345/saini-txt-direct")],
+            [InlineKeyboardButton(text="📞 Contact", url=f"tg://openmessage?user_id={OWNER}"), InlineKeyboardButton(text="🛠️ Repo", url=REPO_URL)],
         ])
         
         await start_message.edit_text(
@@ -122,7 +126,7 @@ async def start(bot, m: Message):
             [InlineKeyboardButton("✨ Commands", callback_data="cmd_command")],
             [InlineKeyboardButton("💎 Features", callback_data="feat_command"), InlineKeyboardButton("⚙️ Settings", callback_data="setttings")],
             [InlineKeyboardButton("💳 Plans", callback_data="upgrade_command")],
-            [InlineKeyboardButton(text="📞 Contact", url=f"tg://openmessage?user_id={OWNER}"), InlineKeyboardButton(text="🛠️ Repo", url="https://github.com/Harrytt345/saini-txt-direct")],
+            [InlineKeyboardButton(text="📞 Contact", url=f"tg://openmessage?user_id={OWNER}"), InlineKeyboardButton(text="🛠️ Repo", url=REPO_URL)],
         ])
         await start_message.edit_text(
            f" 🎉 Welcome {m.from_user.first_name} to DRM Bot! 🎉\n\n"
@@ -140,7 +144,7 @@ async def back_to_main_menu(client, callback_query):
             [InlineKeyboardButton("✨ Commands", callback_data="cmd_command")],
             [InlineKeyboardButton("💎 Features", callback_data="feat_command"), InlineKeyboardButton("⚙️ Settings", callback_data="setttings")],
             [InlineKeyboardButton("💳 Plans", callback_data="upgrade_command")],
-            [InlineKeyboardButton(text="📞 Contact", url=f"tg://openmessage?user_id={OWNER}"), InlineKeyboardButton(text="🛠️ Repo", url="https://github.com/Harrytt345/saini-txt-direct")],
+            [InlineKeyboardButton(text="📞 Contact", url=f"tg://openmessage?user_id={OWNER}"), InlineKeyboardButton(text="🛠️ Repo", url=REPO_URL)],
         ])
     
     await callback_query.message.edit_media(
@@ -538,8 +542,8 @@ async def pdf_watermark_button(client, callback_query):
   caption = ("<b>⋅ This Feature is Not Working Yet ⋅</b>")
   await callback_query.message.edit_media(
     InputMediaPhoto(
-        media="https://envs.sh/GVI.jpg",
-        caption=caption
+      media="https://envs.sh/GVI.jpg",
+      caption=caption
     ),
     reply_markup=keyboard
   )
@@ -766,7 +770,7 @@ async def editor_button(client, callback_query):
 @bot.on_callback_query(filters.regex("yt_command"))
 async def y2t_button(client, callback_query):
   keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Feature", callback_data="feat_command")]])
-  caption = f"**YouTube Commands:**\n\n◆/y2t - 🔪 YouTube Playlist → .txt Converter\n◆/ytm - 🎶 YouTube → .mp3 downloader\n\n<blockquote><b>◆YouTube → .mp3 downloader\n01. Send YouTube Playlist.txt file\n02. Send single or multiple YouTube links set\neg.\n`https://www.youtube.com/watch?v=xxxxxx\nhttps://www.youtube.com/watch?v=yyyyyy`</b></blockquote>"
+  caption = f"**YouTube Commands:**\n\n◆/y2t - 🔪 YouTube Playlist → .txt Converter\n◆/ytm - 🎶 YouTube → .mp3 downloader\n\n<blockquote><b>◆YouTube → .mp3 downloader\n01. Send YouTube Playlist.txt file\n02. Send single or multiple YouTube links set\nneg.\n`https://www.youtube.com/watch?v=xxxxxx\nhttps://www.youtube.com/watch?v=yyyyyy`</b></blockquote>"
   await callback_query.message.edit_media(
     InputMediaPhoto(
       media="https://envs.sh/GVi.jpg",
@@ -896,81 +900,11 @@ async def call_broadusers_handler(client: Client, message: Message):
     
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
 @bot.on_message(filters.command("cookies") & filters.private)
-async def call_cookies_handler(client: Client, m: Message):
-    await cookies_handler(client, m)
+async def call_cookies_handler(client: Client, message: Message):
+    await cookies_handler(client, message)
 
 # .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
-@bot.on_message(filters.command(["t2t"]))
-async def call_text_to_txt(bot: Client, m: Message):
-    await text_to_txt(bot, m)
-
-# .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
-@bot.on_message(filters.command(["y2t"]))
-async def call_y2t_handler(bot: Client, m: Message):
-    await y2t_handler(bot, m)
-
-# .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
-@bot.on_message(filters.command(["ytm"]))
-async def call_ytm_handler(bot: Client, m: Message):
-    await ytm_handler(bot, m)
-
-# .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....
-@bot.on_message(filters.command("getcookies") & filters.private)
-async def call_getcookies_handler(client: Client, m: Message):
-    await getcookies_handler(client, m)
-
-#...............…........# .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
-@bot.on_message(filters.command(["t2h"]))
-async def call_html_handler(bot: Client, message: Message):
-    await html_handler(bot, message)
-    
-# .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
-@bot.on_message(filters.private & (filters.document | filters.text))
-async def call_drm_handler(bot: Client, m: Message):
-    await drm_handler(bot, m)
-                          
-# .....,.....,.......,...,.......,....., .....,.....,.......,...,.......,.....,
-
-def notify_owner():
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    data = {
-        "chat_id": OWNER,
-        "text": "𝐁𝐨𝐭 𝐑𝐞𝐬𝐭𝐚𝐫𝐭𝐞𝐝 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲 ✅"
-    }
-    requests.post(url, data=data)
-
-
-def reset_and_set_commands():
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/setMyCommands"
-    # Reset
-    requests.post(url, json={"commands": []})
-    # Set new
-    commands = [
-        {"command": "start", "description": "✅ Check Alive the Bot"},
-        {"command": "stop", "description": "🚫 Stop the ongoing process"},
-        {"command": "id", "description": "🆔 Get Your ID"},
-        {"command": "info", "description": "ℹ️ Check Your Information"},
-        {"command": "cookies", "description": "📁 Upload YT Cookies"},
-        {"command": "y2t", "description": "🔪 YouTube → .txt Converter"},
-        {"command": "ytm", "description": "🎶 YouTube → .mp3 downloader"},
-        {"command": "t2t", "description": "📟 Text → .txt Generator"},
-        {"command": "t2h", "description": "🌐 .txt → .html Converter"},
-        {"command": "logs", "description": "👁️ View Bot Activity"},
-        {"command": "broadcast", "description": "📢 Broadcast to All Users"},
-        {"command": "broadusers", "description": "👨‍❤️‍👨 All Broadcasting Users"},
-        {"command": "addauth", "description": "▶️ Add Authorisation"},
-        {"command": "rmauth", "description": "⏸️ Remove Authorisation "},
-        {"command": "users", "description": "👨‍👨‍👧‍👦 All Premium Users"},
-        {"command": "reset", "description": "✅ Reset the Bot"}
-    ]
-    requests.post(url, json={"commands": commands})
-    
-
-
-
+# Main execution
 if __name__ == "__main__":
-    reset_and_set_commands()
-    notify_owner() 
-
-
-bot.run()
+    print("Bot is starting...")
+    bot.run()
