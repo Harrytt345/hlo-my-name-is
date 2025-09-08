@@ -9,7 +9,7 @@ BOT_TOKEN = environ.get("BOT_TOKEN", "8220980703:AAHBPk9OuN2aXW0Aq0lmqgARxlmLkYw
 
 OWNER = int(environ.get("OWNER", "7385595817"))
 CREDIT = environ.get("CREDIT", "TheOne")
-REPO_URL = environ.get("REPO_URL", "https://github.com/Harrytt345/saini-txt-direct")
+REPO_URL = environ.get("REPO_URL", "https://github.com/Harrytt345/hlo-my-name-is")
 cookies_file_path = os.getenv("cookies_file_path", "youtube_cookies.txt")
 
 TOTAL_USER = os.environ.get('TOTAL_USERS', '7385595817').split(',')
